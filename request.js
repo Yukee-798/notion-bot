@@ -121,30 +121,30 @@ const createPage = async (dbID, pageName, content = "") => {
         children: content,
       });
     }
-    console.log({ message: "success!", data: newPage });
+    return { message: "success!", data: newPage };
   } catch (error) {
-    console.log({ message: "error", error });
+    return error;
   }
 };
 
 const createComment = async (pageID, comment) => {
-    try {
-      const newComment = await notion.comments.create({
-        parent: {
-          page_id: pageID,
-        },
-        rich_text: [
-          {
-            text: {
-              content: comment,
-            },
+  try {
+    const newComment = await notion.comments.create({
+      parent: {
+        page_id: pageID,
+      },
+      rich_text: [
+        {
+          text: {
+            content: comment,
           },
-        ],
-      });
-      response.json({ message: "success!", data: newComment });
-    } catch (error) {
-      response.json({ message: "error", error });
-    }
+        },
+      ],
+    });
+    return { message: "success!", data: newComment };
+  } catch (error) {
+    return error;
+  }
 };
 
 module.exports = {
