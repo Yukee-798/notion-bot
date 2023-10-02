@@ -2,7 +2,7 @@
   "name": "web-form-with-express-example",
   "version": "1.0.0",
   "description": "Internal Notion intergration demo app using Express.js for a server.",
-  "main": "server.js",
+  "main": "src/index.js",
   "scripts": {
     "start": "node server.js"
   },
@@ -14,7 +14,8 @@
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "langchain": "^0.0.135",
-    "node-cron": "^3.0.2"
+    "node-cron": "^3.0.2",
+    "ts-node": "^10.9.1"
   },
   "engines": {
     "node": "14.x"
@@ -32,5 +33,12 @@
     "node",
     "notion",
     "express"
-  ]
+  ],
+  "devDependencies": {
+    "@types/express": "^4.17.18",
+    "@types/node": "^20.8.0",
+    "@types/node-cron": "^3.0.9",
+    "nodemon": "^3.0.1",
+    "typescript": "^5.2.2"
+  }
 }

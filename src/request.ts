@@ -1,4 +1,4 @@
-const { Client } = require("@notionhq/client");
+import { Client } from "@notionhq/client";
 const notion = new Client({ auth: process.env.NOTION_KEY });
 
 const writePageContent = async (pageID, content, mode = "append") => {
@@ -54,7 +54,7 @@ const writePageContent = async (pageID, content, mode = "append") => {
     console.log({ message: "error", error });
   }
 };
-const createPage = async (dbID, pageName, content = "") => {
+export const createPage = async (dbID, pageName, content = "") => {
   try {
     let newPage;
     if (typeof content === "string") {
@@ -127,7 +127,7 @@ const createPage = async (dbID, pageName, content = "") => {
   }
 };
 
-const createComment = async (pageID, comment) => {
+export const createComment = async (pageID, comment) => {
   try {
     const newComment = await notion.comments.create({
       parent: {
@@ -145,9 +145,4 @@ const createComment = async (pageID, comment) => {
   } catch (error) {
     return error;
   }
-};
-
-module.exports = {
-  createPage,
-  createComment,
 };
