@@ -1,18 +1,21 @@
 import express from "express";
-import fs from "fs";
-import { markdownToBlocks, markdownToRichText } from "@tryfabric/martian";
-import cron from "node-cron";
-require("dotenv").config();
-
 import dayjs from "dayjs";
 import localeData from "dayjs/plugin/localeData";
 import weekOfYear from "dayjs/plugin/weekOfYear";
-import { createComment, createPage } from "./request";
+import { Client } from "@notionhq/client";
+import * as dotenv from "dotenv";
+import { createComment, getCommentsList } from "./request";
+import { pollInSeconds } from "./utils";
+import { UserMapByID } from "./constant";
+
+dotenv.config();
 
 const app = express();
+export const notion = new Client({ auth: process.env.NOTION_KEY });
 dayjs.extend(localeData);
 dayjs.extend(weekOfYear);
 
+// !! FIX ME: ob 的 journal 插件使用的是周天为一周第一天
 // 自定义本地化实例
 // const customLocale = {
 //   name: "custom-locale",
@@ -24,127 +27,37 @@ dayjs.extend(weekOfYear);
 
 // dayjs.locale(customLocale, null, true);
 
-const { Client } = require("@notionhq/client");
-const notion = new Client({ auth: process.env.NOTION_KEY });
+app.use(express.json());
 
-// http://expressjs.com/en/starter/static-files.html
-app.use(express.static("public"));
-app.use(express.json()); // for parsing application/json
-
-// listen for requests :)
 const listener = app.listen(process.env.PORT, function () {
-  console.log("Your app is listening on port " + listener.address());
+  // @ts-ignore
+  console.log("Your app is listening on port " + listener.address().port);
 });
 
-const readFile = async (filename: string): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    fs.readFile(filename, (err, data) => {
-      if (err) {
-        reject(err);
-      } else {
-        const bufferString = data.toString("utf8");
-        resolve(bufferString);
-      }
-    });
-  });
-};
-
-// 获取目录下所有文件名
-const getFiles = async (dir: string): Promise<string[]> => {
-  return new Promise((resolve, reject) => {
-    fs.readdir(dir, (err, files) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(files);
-      }
-    });
-  });
-};
-
-const splitMarkdown = (content) => {
-  const [, ...splitsByHead2] = content.split("##");
-  const map = {};
-  splitsByHead2.forEach((item) => {
-    // ignore the first space
-    const startIndex = 1;
-    const endIndex = item.indexOf("\n");
-
-    const header = item.slice(startIndex, endIndex);
-    map[header] = `##${item}`;
-  });
-  return map;
-};
-
-const syncOb2Notion = async () => {
-  const curDate = dayjs().format("YYYY-MM-DD");
-  const [year, month, date] = curDate.split("-");
-  const weekNumber = dayjs().week();
-  const journalWeekPath = `${process.env.OBSIDIAN_VAULT_PATH}/1 Journal/${year}/W${weekNumber}`;
-  const targetJournalPath = `${journalWeekPath}/${month}-${date}.md`;
-  const journalFileNames = await getFiles(journalWeekPath);
-  // const latestJournalFileName = journalFileNames.at(-1);
-  const latestJournalFileName = journalFileNames[journalFileNames.length - 1];
-  const isObTodayJournalCreated =
-    latestJournalFileName === `${month}-${date}.md`;
-
-  // sync content with Notion
-  if (isObTodayJournalCreated) {
-    const dbID = process.env.NOTION_DB_ID;
-    const pageName = curDate;
-    const content = await readFile(targetJournalPath);
-    console.log("🚀 ~ file: server.js:214 ~ main ~ content:", content.length);
-
-    const splitsMapByHead2 = splitMarkdown(content);
-
-    // const dailyPlanBlocks = markdownToBlocks(splitsMapByHead2["Daily Plan"]);
-    // const weeklyPlanBlocks = markdownToBlocks(splitsMapByHead2["Weekly Plan"]);
-    const reviewBlocks = markdownToBlocks(splitsMapByHead2["Review"]);
-    const feedbackBlocks = markdownToBlocks(splitsMapByHead2["Feedback"]);
-
-    // const content = "Hello world! I love you :)";
-
-    const data = await createPage(dbID, pageName, feedbackBlocks as any);
-    const syncInfo = {
-      ...data,
-      obJournalFileName: latestJournalFileName,
-    };
-    return syncInfo;
-  } else {
-    throw Error("Today's journal is not created in Obsidian!");
-  }
-};
-
-const autoComment = async (pageID, comment) => {
-  return createComment(pageID, comment);
-};
-
 const main = async () => {
-  // Scheduled task execution
-  cron.schedule("*/10 * * * * *", async () => {
-    const curTime = dayjs().format("YYYY-MM-DD HH:mm:ss");
-    // const syncInfo = await syncOb2Notion();
-    // console.log(
-    //   `Synchronization of ${syncInfo.obJournalFileName} completed at ${curTime}`
-    // );
-  });
+  let cache = [];
+  pollInSeconds(async () => {
+    const commentList = await getCommentsList(
+      "7b0deed913a548eeac089c4fba6d59a6"
+    );
 
-  const curTime = dayjs().format("YYYY-MM-DD HH:mm:ss");
-  const { data, obJournalFileName } = await syncOb2Notion();
-  console.log("🚀 ~ file: server.js:138 ~ main ~ data:", data);
-  console.log(
-    `Synchronization of ${obJournalFileName} completed at ${curTime}`
-  );
+    const isNewCommentCreated = cache.length < commentList.length;
+    if (isNewCommentCreated) {
+      const commentHistoryPrompt = commentList.reduce((pre, cur) => {
+        const content = `Human(${UserMapByID[cur.userID]?.name}): ${cur.text}`;
+        return `${pre}${content} \n`;
+      }, "");
+      console.log(
+        "🚀 ~ file: index.ts:50 ~ commentHistoryPrompt ~ commentHistoryPrompt:",
+        commentHistoryPrompt
+      );
 
-  const {} = await autoComment(
-    data.id,
-    "The following content is automatically generated by Doraemon."
-  );
 
-  // const res = markdownToBlocks(" Review\n\n- Check List\n- 哪些选择\n\n");
-  // await createPage(process.env.NOTION_DB_ID, "Review", res);
 
-  // listen new page and comment created
+
+      cache = commentList;
+    }
+  }, 5);
 };
 
 main();

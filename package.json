@@ -1,5 +1,5 @@
 {
-  "name": "web-form-with-express-example",
+  "name": "notion-bot",
   "version": "1.0.0",
   "description": "Internal Notion intergration demo app using Express.js for a server.",
   "main": "src/index.js",
@@ -13,7 +13,7 @@
     "dayjs": "^1.11.9",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "langchain": "^0.0.135",
+    "langchain": "^0.0.157",
     "node-cron": "^3.0.2",
     "ts-node": "^10.9.1"
   },

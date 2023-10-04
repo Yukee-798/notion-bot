@@ -1,5 +1,6 @@
-import { Client } from "@notionhq/client";
-const notion = new Client({ auth: process.env.NOTION_KEY });
+import dayjs from "dayjs";
+import { notion } from ".";
+import { Comment } from "./types";
 
 const writePageContent = async (pageID, content, mode = "append") => {
   try {
@@ -54,6 +55,7 @@ const writePageContent = async (pageID, content, mode = "append") => {
     console.log({ message: "error", error });
   }
 };
+
 export const createPage = async (dbID, pageName, content = "") => {
   try {
     let newPage;
@@ -127,7 +129,38 @@ export const createPage = async (dbID, pageName, content = "") => {
   }
 };
 
-export const createComment = async (pageID, comment) => {
+export const getPageInfo = async (pageID) => {};
+
+export const getDatabaseInfo = async (dbID) => {};
+
+// 这里的 blockID 也可以是 pageID
+export const getCommentsList = async (blockID: string): Promise<Comment[]> => {
+  const { results } = await notion.comments.list({ block_id: blockID });
+  console.log("🚀 ~ file: request.ts:139 ~ getCommentsList ~ results:", results)
+  const list = results.map((item) => {
+    const {
+      created_by,
+      created_time,
+      id,
+      parent,
+      rich_text,
+      last_edited_time,
+    } = item;
+
+    const comment: Comment = {
+      id,
+      userID: created_by.id,
+      createTime: dayjs(created_time).format("YYYY-MM-DD HH:mm:ss"),
+      lastEditedTime: dayjs(last_edited_time).format("YYYY-MM-DD HH:mm:ss"),
+      parent,
+      text: rich_text[0].plain_text,
+    };
+    return comment;
+  });
+  return list;
+};
+
+export const createComment = async (pageID, content) => {
   try {
     const newComment = await notion.comments.create({
       parent: {
@@ -136,7 +169,7 @@ export const createComment = async (pageID, comment) => {
       rich_text: [
         {
           text: {
-            content: comment,
+            content,
           },
         },
       ],
