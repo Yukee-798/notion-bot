@@ -1,3 +1,6 @@
+export interface PageInfo {
+  // TODO: ...
+}
 
 export interface Comment {
   id: string;

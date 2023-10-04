@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { notion } from ".";
+import { envConfig, notion } from "./constant";
 import { Comment } from "./types";
 
 const writePageContent = async (pageID, content, mode = "append") => {
@@ -129,14 +129,28 @@ export const createPage = async (dbID, pageName, content = "") => {
   }
 };
 
-export const getPageInfo = async (pageID) => {};
-
-export const getDatabaseInfo = async (dbID) => {};
+export const getPageInfoListByDatabaseID = async (databaseID: string) => {
+  const list = await notion.databases.query({
+    database_id: databaseID,
+    filter: {
+      timestamp: "created_time",
+      created_time: {
+        on_or_after: dayjs().subtract(10, "day").format("YYYY-MM-DD"),
+      },
+    },
+    sorts: [
+      {
+        timestamp: "created_time",
+        direction: "descending",
+      },
+    ],
+  });
+  return list;
+};
 
 // 这里的 blockID 也可以是 pageID
 export const getCommentsList = async (blockID: string): Promise<Comment[]> => {
   const { results } = await notion.comments.list({ block_id: blockID });
-  console.log("🚀 ~ file: request.ts:139 ~ getCommentsList ~ results:", results)
   const list = results.map((item) => {
     const {
       created_by,
