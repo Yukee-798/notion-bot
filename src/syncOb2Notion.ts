@@ -31,7 +31,7 @@ export const syncOb2Notion = async () => {
 
   // sync content with Notion
   if (isObTodayJournalCreated) {
-    const dbID = process.env.NOTION_DB_ID;
+    const dbID = process.env.NOTION_DB_ID_FOR_KLL;
     const pageName = curDate;
     const content = await readFile(targetJournalPath);
     console.log("🚀 ~ file: server.js:214 ~ main ~ content:", content.length);

@@ -1,19 +1,16 @@
 import express from "express";
-import dayjs from "dayjs";
-import localeData from "dayjs/plugin/localeData";
-import weekOfYear from "dayjs/plugin/weekOfYear";
-import { Client } from "@notionhq/client";
-import * as dotenv from "dotenv";
-import { createComment, getCommentsList } from "./request";
+import {
+  createComment,
+  getCommentsList,
+  getPageInfoListByDatabaseID,
+} from "./request";
 import { pollInSeconds } from "./utils";
-import { UserMapByID } from "./constant";
+import { UserMapByID, envConfig } from "./constant";
+import { llm } from "./llm";
 
-dotenv.config();
+import "./constant";
 
 const app = express();
-export const notion = new Client({ auth: process.env.NOTION_KEY });
-dayjs.extend(localeData);
-dayjs.extend(weekOfYear);
 
 // !! FIX ME: ob 的 journal 插件使用的是周天为一周第一天
 // 自定义本地化实例
@@ -35,29 +32,34 @@ const listener = app.listen(process.env.PORT, function () {
 });
 
 const main = async () => {
-  let cache = [];
-  pollInSeconds(async () => {
-    const commentList = await getCommentsList(
-      "7b0deed913a548eeac089c4fba6d59a6"
-    );
-
-    const isNewCommentCreated = cache.length < commentList.length;
-    if (isNewCommentCreated) {
-      const commentHistoryPrompt = commentList.reduce((pre, cur) => {
-        const content = `Human(${UserMapByID[cur.userID]?.name}): ${cur.text}`;
-        return `${pre}${content} \n`;
-      }, "");
-      console.log(
-        "🚀 ~ file: index.ts:50 ~ commentHistoryPrompt ~ commentHistoryPrompt:",
-        commentHistoryPrompt
-      );
-
-
-
-
-      cache = commentList;
-    }
-  }, 5);
+  // let cache = [];
+  // pollInSeconds(async () => {
+  //   const commentList = await getCommentsList(
+  //     "7b0deed913a548eeac089c4fba6d59a6"
+  //   );
+  //   const isNewCommentCreated = cache.length !== commentList.length;
+  //   console.log(
+  //     "🚀 ~ file: index.ts:54 ~ pollInSeconds ~ isNewCommentCreated:",
+  //     isNewCommentCreated
+  //   );
+  //   // if (isNewCommentCreated) {
+  //   //   console.log('hello')
+  //   //   cache = commentList
+  //   // }
+  //   if (isNewCommentCreated) {
+  //     cache = [...commentList];
+  //     const commentHistoryPrompt = commentList.reduce((pre, cur) => {
+  //       const content = `Human(${UserMapByID[cur.userID]?.name}): ${cur.text}`;
+  //       return `${pre}${content} \n`;
+  //     }, "");
+  //     // console.log(
+  //     //   "🚀 ~ file: index.ts:50 ~ commentHistoryPrompt ~ commentHistoryPrompt:",
+  //     //   commentHistoryPrompt
+  //     // );
+  //     const res = await llm.predict(`${commentHistoryPrompt}\nAI(Dora):`);
+  //     await createComment("7b0deed913a548eeac089c4fba6d59a6", res);
+  //   }
+  // }, 5);
 };
 
 main();

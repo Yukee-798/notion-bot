@@ -1,32 +1,20 @@
 import { OpenAI, OpenAIChat } from "langchain/llms/openai";
+import { envConfig } from "./constant";
 
 export const llm = new OpenAI({
   modelName: "gpt-3.5-turbo",
   configuration: {
-    basePath: "https://api.aikey.one/v1",
-    apiKey: "sk-Zvj3ZeJ2LxmAk22GC19aA58d669341Ff9c517d290a2f1d9e",
+    basePath: envConfig.OPENAI_BASE_PATH,
+    apiKey: envConfig.OPENAI_API_KEY,
   },
-  openAIApiKey: "sk-Zvj3ZeJ2LxmAk22GC19aA58d669341Ff9c517d290a2f1d9e",
-  // openAIApiKey: "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",
+  openAIApiKey: envConfig.OPENAI_API_KEY,
 });
 
 export const chat = new OpenAIChat({
   modelName: "gpt-3.5-turbo",
   configuration: {
-    basePath: "https://api.aikey.one/v1",
-    apiKey: "sk-Zvj3ZeJ2LxmAk22GC19aA58d669341Ff9c517d290a2f1d9e",
+    basePath: envConfig.OPENAI_BASE_PATH,
+    apiKey: envConfig.OPENAI_API_KEY,
   },
-  openAIApiKey: "sk-Zvj3ZeJ2LxmAk22GC19aA58d669341Ff9c517d290a2f1d9e",
-  // openAIApiKey: "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",
+  openAIApiKey: envConfig.OPENAI_API_KEY,
 });
-
-
-// const llmResult = await chat.predict("hello");
-// chat.predict("hello").then(
-//   (res) => {
-//     console.log(res);
-//   },
-//   (err) => {
-//     console.log("🚀 ~ file: index.ts:63 ~ chat.predict ~ err:", err);
-//   }
-// );
